@@ -1,7 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
 import { StoreContext } from "./context/StoreContext";
 import Navbar from "./components/Navbar/Navbar";
-import { Route, Routes, useSearchParams } from "react-router-dom";
+import Sidebar from "./components/Sidebar/Sidebar";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+
+import { Route, Routes } from "react-router-dom";
+
 import Home from "./pages/Home/Home";
 import Card from "./pages/Card/Card";
 import PlaceOrder from "./pages/PlaceOrder/PlaceOrder";
@@ -9,95 +13,137 @@ import Footer from "./components/Footer/Footer";
 import LoginPopup from "./components/LoginPopup/LoginPopup";
 import Verify from "./pages/verify/verify";
 import MyOrders from "./pages/MyOrders/MyOrders";
-import ProtectedRoute from "../../admin/src/components/ProtectedRoute/ProtectedRoute";
-import Orders from "../../admin/src/pages/Orders/Orders";
-import List from "../../admin/src/pages/List/List";
-import Add from "../../admin/src/pages/Add/Add";
-import { Sidebar } from "lucide-react";
+
+import Orders from "./pages/Orders/Orders";
+import List from "./pages/List/List";
+import Add from "./pages/Add/Add";
+
 import { ToastContainer } from "react-toastify";
 
 const App = () => {
-  const [showLogin, setShowLogin] = useState(false);
-  const [searchParams] = useSearchParams();
-const {
-    token,
-    authLoading,
-    authChecked
-} = useContext(StoreContext);
+    const [showLogin, setShowLogin] = useState(false);
 
-useEffect(() => {
+    const {
+        token,
+        role,
+        authLoading,
+        authChecked,
+        url
+    } = useContext(StoreContext);
 
-    if (!authLoading && authChecked && !token) {
+    useEffect(() => {
+        if (!authLoading && authChecked && !token) {
+            const loginRequired =
+                sessionStorage.getItem("loginRequired");
 
-        const loginRequired =
-            sessionStorage.getItem(
-                "loginRequired"
-            );
+            if (loginRequired === "true") {
+                setShowLogin(true);
 
-        if (loginRequired === "true") {
-
-            setShowLogin(true);
-
-            sessionStorage.removeItem(
-                "loginRequired"
-            );
+                sessionStorage.removeItem(
+                    "loginRequired"
+                );
+            }
         }
-    }
+    }, [authLoading, authChecked, token]);
 
-}, [authLoading, authChecked, token]);
+    const isAdmin = role === "admin";
 
-  const url = import.meta.env.VITE_BACKEND_URL;
-  console.log(url);
-  const role = searchParams.get("role");
-  return (
-    <>
-      <ToastContainer></ToastContainer>
-      <div>
-        {showLogin && <LoginPopup setShowLogin={setShowLogin}></LoginPopup>}
-        <div className="app">
-          <Navbar setShowLogin={setShowLogin} />
-          {role === "admin" && <hr />}
-          {role === "admin" && <Sidebar />}
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/card" element={<Card />} />
-            <Route path="/order" element={<PlaceOrder />} />
-            <Route path="/verify" element={<Verify />} />
-            <Route path="/myorders" element={<MyOrders />}></Route>
-            <Route
-              path="/add"
-              element={
-                <ProtectedRoute>
-                  {" "}
-                  <Add url={url} />{" "}
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/list"
-              element={
-                <ProtectedRoute>
-                  {" "}
-                  <List url={url} />{" "}
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  {" "}
-                  <Orders url={url} />{" "}
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
+    return (
+        <>
+            <ToastContainer />
 
-        <Footer></Footer>
-      </div>
-    </>
-  );
+            {showLogin && (
+                <LoginPopup
+                    setShowLogin={setShowLogin}
+                />
+            )}
+
+            <div className="app">
+
+                {/* NORMAL USER NAVBAR */}
+                {!isAdmin && (
+                    <Navbar
+                        setShowLogin={setShowLogin}
+                    />
+                )}
+
+                {/* ADMIN SIDEBAR */}
+                {isAdmin && (
+                    <>
+                        <hr />
+                        <Sidebar />
+                    </>
+                )}
+
+                <Routes>
+
+                    {/* ========================= */}
+                    {/* NORMAL USER ROUTES */}
+                    {/* ========================= */}
+
+                    <Route
+                        path="/"
+                        element={<Home />}
+                    />
+
+                    <Route
+                        path="/card"
+                        element={<Card />}
+                    />
+
+                    <Route
+                        path="/order"
+                        element={<PlaceOrder />}
+                    />
+
+                    <Route
+                        path="/verify"
+                        element={<Verify />}
+                    />
+
+                    <Route
+                        path="/myorders"
+                        element={<MyOrders />}
+                    />
+
+                    {/* ========================= */}
+                    {/* ADMIN ROUTES */}
+                    {/* ========================= */}
+
+                    <Route
+                        path="/add"
+                        element={
+                            <ProtectedRoute>
+                                <Add url={url} />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/list"
+                        element={
+                            <ProtectedRoute>
+                                <List url={url} />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/orders"
+                        element={
+                            <ProtectedRoute>
+                                <Orders url={url} />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                </Routes>
+            </div>
+
+            {/* USER FOOTER ONLY */}
+            {!isAdmin && <Footer />}
+        </>
+    );
 };
 
 export default App;

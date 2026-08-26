@@ -1,148 +1,554 @@
 import axios from "axios";
-import { createContext, useEffect, useState } from "react";
+import {
+    createContext,
+    useEffect,
+    useState
+} from "react";
 
-export const StoreContext = createContext(null);
+
+export const StoreContext =
+    createContext(null);
+
+
+const TOKEN_KEY = "token";
+const ROLE_KEY = "role";
+
+
+const apiUrl =
+    import.meta.env.VITE_API_URL?.replace(
+        /\/$/,
+        ""
+    );
+
+
+if (!apiUrl) {
+    throw new Error(
+        "VITE_API_URL is not configured."
+    );
+}
 
 
 const StoreContextProvider = (props) => {
 
-    const [cartItems, setCartItems] = useState({});
+    // --------------------------------------------
+    // AUTH STATE
+    // --------------------------------------------
 
-    const [food_list, setFoodlist] = useState([]);
-
-    const [token, setToken] = useState("");
-
-    const [role, setRole] = useState("");
-
-    const [user, setUser] = useState(null);
-
-const [authLoading, setAuthLoading] = useState(true);
-const [authFailed, setAuthFailed] = useState(false);
-const [authChecked, setAuthChecked] = useState(false);
-
-    const url = "http://localhost:3000";
+    const [token, setToken] =
+        useState(() =>
+            localStorage.getItem(TOKEN_KEY) || ""
+        );
 
 
-    // -----------------------------------
-    // CLEAR AUTHENTICATION
-    // -----------------------------------
+    const [role, setRole] =
+        useState(() =>
+            localStorage.getItem(ROLE_KEY) || ""
+        );
+
+
+    const [user, setUser] =
+        useState(null);
+
+
+    const [authStatus, setAuthStatus] =
+        useState("loading");
+
+
+    // --------------------------------------------
+    // FOOD
+    // --------------------------------------------
+
+    const [food_list, setFoodlist] =
+        useState([]);
+
+
+    // --------------------------------------------
+    // CART
+    // --------------------------------------------
+
+    const [cartItems, setCartItems] =
+        useState({});
+
+
+    // --------------------------------------------
+    // CLEAR AUTH
+    // --------------------------------------------
 
     const clearAuthentication = () => {
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(ROLE_KEY);
 
         setToken("");
         setRole("");
         setUser(null);
 
         setCartItems({});
+
+        setAuthStatus(
+            "unauthenticated"
+        );
     };
 
 
-    // -----------------------------------
+    // --------------------------------------------
+    // SAVE AUTH SESSION
+    // --------------------------------------------
+
+    const saveAuthentication = (
+        newToken,
+        currentUser
+    ) => {
+
+        const userRole =
+            currentUser?.role || "user";
+
+
+        localStorage.setItem(
+            TOKEN_KEY,
+            newToken
+        );
+
+
+        localStorage.setItem(
+            ROLE_KEY,
+            userRole
+        );
+
+
+        setToken(newToken);
+        setRole(userRole);
+        setUser(currentUser);
+        setAuthStatus("authenticated");
+    };
+
+
+    // --------------------------------------------
+    // GET CURRENT USER
+    // --------------------------------------------
+
+    const getCurrentUser = async (
+        storedToken
+    ) => {
+
+        try {
+
+            const response =
+                await axios.get(
+                    `${apiUrl}/api/user/getuser`,
+                    {
+                        headers: {
+                            token: storedToken
+                        }
+                    }
+                );
+
+
+            if (
+                !response.data?.success ||
+                !response.data?.user
+            ) {
+
+                throw new Error(
+                    response.data?.message ||
+                    "Unable to validate user."
+                );
+            }
+
+
+            const currentUser =
+                response.data.user;
+
+
+            const currentRole =
+                currentUser.role || "user";
+
+
+            // --------------------------------
+            // USER FROM BACKEND IS AUTHORITATIVE
+            // --------------------------------
+
+            localStorage.setItem(
+                TOKEN_KEY,
+                storedToken
+            );
+
+            localStorage.setItem(
+                ROLE_KEY,
+                currentRole
+            );
+
+
+            setToken(storedToken);
+            setRole(currentRole);
+            setUser(currentUser);
+
+            setAuthStatus(
+                "authenticated"
+            );
+
+
+            return currentUser;
+
+        } catch (error) {
+
+            console.error(
+                "User validation failed:",
+                error
+            );
+
+
+            // Token invalid
+            // User deleted
+            // API unavailable
+            // Any authentication API failure
+            // => logout completely
+
+            clearAuthentication();
+
+            return null;
+        }
+    };
+
+
+    // --------------------------------------------
+    // LOGIN / REGISTER
+    // --------------------------------------------
+
+    const authenticateUser = async (
+        mode,
+        data
+    ) => {
+
+        const endpoint =
+            mode === "login"
+                ? "/api/user/login"
+                : "/api/user/register";
+
+
+        try {
+
+            const response =
+                await axios.post(
+                    `${apiUrl}${endpoint}`,
+                    data
+                );
+
+
+            if (
+                !response.data?.success
+            ) {
+
+                return {
+                    success: false,
+                    message:
+                        response.data?.message ||
+                        "Authentication failed."
+                };
+            }
+
+
+            const newToken =
+                response.data.token;
+
+
+            const currentUser =
+                response.data.user;
+
+
+            if (
+                !newToken ||
+                !currentUser
+            ) {
+
+                return {
+                    success: false,
+                    message:
+                        "Invalid response from server."
+                };
+            }
+
+
+            saveAuthentication(
+                newToken,
+                currentUser
+            );
+
+
+            // Load user's cart after authentication
+            await loadCardData(
+                newToken
+            );
+
+
+            return {
+                success: true,
+                token: newToken,
+                user: currentUser
+            };
+
+        } catch (error) {
+
+            console.error(
+                "Authentication request failed:",
+                error
+            );
+
+
+            return {
+                success: false,
+                message:
+                    error.response?.data?.message ||
+                    "Unable to connect to the server."
+            };
+        }
+    };
+
+
+    // --------------------------------------------
+    // FOOD LIST
+    // --------------------------------------------
+
+    const fetchFoodlist = async () => {
+
+        try {
+
+            const response =
+                await axios.get(
+                    `${apiUrl}/api/food/list`
+                );
+
+
+            if (
+                response.data?.success === false
+            ) {
+                throw new Error(
+                    response.data?.message ||
+                    "Unable to load food."
+                );
+            }
+
+
+            setFoodlist(
+                response.data?.data || []
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Food list error:",
+                error
+            );
+
+            setFoodlist([]);
+        }
+    };
+
+
+    // --------------------------------------------
+    // LOAD CART
+    // --------------------------------------------
+
+    const loadCardData = async (
+        userToken
+    ) => {
+
+        try {
+
+            const response =
+                await axios.post(
+                    `${apiUrl}/api/card/get`,
+                    {},
+                    {
+                        headers: {
+                            token: userToken
+                        }
+                    }
+                );
+
+
+            if (
+                response.data?.success === false
+            ) {
+
+                throw new Error(
+                    response.data?.message ||
+                    "Unable to load cart."
+                );
+            }
+
+
+            setCartItems(
+                response.data?.cartData || {}
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Cart loading error:",
+                error
+            );
+
+            // Cart failure is NOT treated as
+            // authentication failure.
+            //
+            // Authentication was already validated
+            // separately by /getuser.
+
+            setCartItems({});
+        }
+    };
+
+
+    // --------------------------------------------
     // ADD TO CART
-    // -----------------------------------
+    // --------------------------------------------
 
-    const addToCart = async (itemId) => {
+    const addToCart = async (
+        itemId
+    ) => {
 
-        if (!cartItems[itemId]) {
+        setCartItems((prev) => {
 
-            setCartItems((prev) => ({
+            if (!prev[itemId]) {
+
+                return {
+                    ...prev,
+                    [itemId]: 1
+                };
+            }
+
+
+            return {
                 ...prev,
-                [itemId]: 1
-            }));
+                [itemId]:
+                    prev[itemId] + 1
+            };
+        });
 
-        } else {
 
-            setCartItems((prev) => ({
-                ...prev,
-                [itemId]: prev[itemId] + 1
-            }));
+        if (!token) {
+            return;
         }
 
 
-        if (token) {
+        try {
 
-            try {
-
-                await axios.post(
-                    url + "/api/card/add",
-                    { itemId },
-                    {
-                        headers: {
-                            token
-                        }
+            await axios.post(
+                `${apiUrl}/api/card/add`,
+                { itemId },
+                {
+                    headers: {
+                        token
                     }
-                );
+                }
+            );
 
-            } catch (error) {
+        } catch (error) {
 
-                console.log("Add to cart error:", error);
-
-            }
+            console.error(
+                "Add to cart error:",
+                error
+            );
         }
     };
 
 
-    // -----------------------------------
+    // --------------------------------------------
     // REMOVE FROM CART
-    // -----------------------------------
+    // --------------------------------------------
 
-    const removeFromCard = async (itemId) => {
+    const removeFromCard = async (
+        itemId
+    ) => {
 
-        setCartItems((prev) => ({
-            ...prev,
-            [itemId]: prev[itemId] - 1
-        }));
+        setCartItems((prev) => {
+
+            const currentQuantity =
+                prev[itemId] || 0;
 
 
-        if (token) {
+            if (
+                currentQuantity <= 1
+            ) {
 
-            try {
+                const updated = {
+                    ...prev
+                };
 
-                await axios.post(
-                    url + "/api/card/remove",
-                    { itemId },
-                    {
-                        headers: {
-                            token
-                        }
-                    }
-                );
+                delete updated[itemId];
 
-            } catch (error) {
-
-                console.log("Remove from cart error:", error);
-
+                return updated;
             }
+
+
+            return {
+                ...prev,
+                [itemId]:
+                    currentQuantity - 1
+            };
+        });
+
+
+        if (!token) {
+            return;
+        }
+
+
+        try {
+
+            await axios.post(
+                `${apiUrl}/api/card/remove`,
+                { itemId },
+                {
+                    headers: {
+                        token
+                    }
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Remove from cart error:",
+                error
+            );
         }
     };
 
 
-    // -----------------------------------
-    // TOTAL CART
-    // -----------------------------------
+    // --------------------------------------------
+    // TOTAL CART AMOUNT
+    // --------------------------------------------
 
     const getTotalCartAmount = () => {
 
         let totalAmount = 0;
 
 
-        for (const item in cartItems) {
+        for (
+            const item in cartItems
+        ) {
 
-            if (cartItems[item] > 0) {
+            if (
+                cartItems[item] <= 0
+            ) {
+                continue;
+            }
 
-                const itemInfo = food_list.find(
-                    (product) => product._id === item
+
+            const itemInfo =
+                food_list.find(
+                    (product) =>
+                        product._id === item
                 );
 
 
-                if (itemInfo) {
+            if (itemInfo) {
 
-                    totalAmount +=
-                        itemInfo.price * cartItems[item];
-                }
+                totalAmount +=
+                    itemInfo.price *
+                    cartItems[item];
             }
         }
 
@@ -151,182 +557,31 @@ const [authChecked, setAuthChecked] = useState(false);
     };
 
 
-    // -----------------------------------
-    // FOOD LIST
-    // -----------------------------------
-
-    const fetchFoodlist = async () => {
-
-        try {
-
-            const response = await axios.get(
-                url + "/api/food/list"
-            );
-
-            setFoodlist(response.data.data);
-
-        } catch (error) {
-
-            console.log(
-                "Food list error:",
-                error
-            );
-        }
-    };
-
-
-    // -----------------------------------
-    // LOAD CART
-    // -----------------------------------
-
-    const loadCardData = async (userToken) => {
-
-        try {
-
-            const response = await axios.post(
-                url + "/api/card/get",
-                {},
-                {
-                    headers: {
-                        token: userToken
-                    }
-                }
-            );
-
-
-            if (response.data.success === false) {
-
-                throw new Error(
-                    "Unable to load cart"
-                );
-            }
-
-
-            setCartItems(
-                response.data.cartData || {}
-            );
-
-        } catch (error) {
-
-            console.log(
-                "Cart loading error:",
-                error
-            );
-
-            // Don't immediately logout here.
-            // Authentication is already validated
-            // separately by getuser.
-        }
-    };
-
-
-    // -----------------------------------
-    // GET CURRENT USER
-    // -----------------------------------
-
-    const getCurrentUser = async (userToken) => {
-
-        try {
-
-            const response = await axios.get(
-                url + "/api/user/getuser",
-                {
-                    headers: {
-                        token: userToken
-                    }
-                }
-            );
-
-
-            if (!response.data.success) {
-
-                throw new Error(
-                    response.data.message ||
-                    "User not found"
-                );
-            }
-
-
-            const currentUser = response.data.user;
-
-
-            if (!currentUser) {
-
-                throw new Error(
-                    "User data not found"
-                );
-            }
-
-
-            // --------------------------------
-            // UPDATE USER STATE
-            // --------------------------------
-
-            setUser(currentUser);
-
-
-            // --------------------------------
-            // UPDATE ROLE
-            // --------------------------------
-
-            const userRole =
-                currentUser.role || "user";
-
-            setRole(userRole);
-
-            localStorage.setItem(
-                "role",
-                userRole
-            );
-
-
-            // --------------------------------
-            // KEEP TOKEN
-            // --------------------------------
-
-            setToken(userToken);
-
-            localStorage.setItem(
-                "token",
-                userToken
-            );
-
-
-            return currentUser;
-
-        } catch (error) {
-
-            console.log(
-                "Get current user failed:",
-                error
-            );
-
-            clearAuthentication();
-            setAuthFailed(true);
-            return null;
-        }
-    };
-
-
-    // -----------------------------------
-    // INITIAL APPLICATION LOAD
-    // -----------------------------------
+    // --------------------------------------------
+    // INITIAL AUTHENTICATION CHECK
+    // --------------------------------------------
 
     useEffect(() => {
 
-        const loadData = async () => {
+        const initializeApplication =
+            async () => {
 
-            setAuthLoading(true);
-
-
-            try {
-
-                // Food can load independently
-                await fetchFoodlist();
+                setAuthStatus(
+                    "loading"
+                );
 
 
                 const storedToken =
-                    localStorage.getItem("token");
+                    localStorage.getItem(
+                        TOKEN_KEY
+                    );
+
+
+                // --------------------------------
+                // ALWAYS LOAD FOOD
+                // --------------------------------
+
+                fetchFoodlist();
 
 
                 // --------------------------------
@@ -338,14 +593,19 @@ const [authChecked, setAuthChecked] = useState(false);
                     setToken("");
                     setRole("");
                     setUser(null);
-                    setAuthFailed(false);
+                    setCartItems({});
+
+                    setAuthStatus(
+                        "unauthenticated"
+                    );
+
                     return;
                 }
 
 
                 // --------------------------------
                 // TOKEN EXISTS
-                // VERIFY TOKEN + USER
+                // VALIDATE WITH BACKEND
                 // --------------------------------
 
                 const currentUser =
@@ -364,76 +624,55 @@ const [authChecked, setAuthChecked] = useState(false);
                         storedToken
                     );
                 }
-
-            } catch (error) {
-
-                console.log(
-                    "Application loading error:",
-                    error
-                );
-
-                clearAuthentication();
-            }finally {
-
-    setAuthLoading(false);
-
-    setAuthChecked(true);
-}
-        };
+            };
 
 
-        loadData();
+        initializeApplication();
 
     }, []);
 
 
-    // -----------------------------------
-    // CONTEXT VALUE
-    // -----------------------------------
+    // --------------------------------------------
+    // CONTEXT
+    // --------------------------------------------
 
     const contextValue = {
 
         food_list,
 
         cartItems,
-
         setCartItems,
 
         addToCart,
-
         removeFromCard,
 
         getTotalCartAmount,
 
-        url,
+        url: apiUrl,
 
         token,
-
         setToken,
 
         role,
-
         setRole,
 
         user,
-
         setUser,
 
-        authLoading,
-        authChecked,
+        authStatus,
 
-        clearAuthentication,
+        authenticateUser,
+        getCurrentUser,
 
-        getCurrentUser
+        clearAuthentication
     };
 
 
     return (
-
-        <StoreContext.Provider value={contextValue}>
-
+        <StoreContext.Provider
+            value={contextValue}
+        >
             {props.children}
-
         </StoreContext.Provider>
     );
 };

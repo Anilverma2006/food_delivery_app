@@ -1,23 +1,34 @@
-import React, { useContext, useState } from "react";
+import React, {
+    useState,
+    useContext
+} from "react";
+
 import "./LoginPopup.css";
+
 import { assets } from "../../assets/assets";
-import { StoreContext } from "../../context/StoreContext";
+
+import {
+    StoreContext
+} from "../../context/StoreContext";
+
 import axios from "axios";
 
+import {
+    useNavigate
+} from "react-router-dom";
 
 const LoginPopup = ({ setShowLogin }) => {
 
     const [currState, setCurrState] =
         useState("Login");
 
-
     const {
         url,
         setToken,
-        setRole,
-        setUser,
+        setRole
     } = useContext(StoreContext);
 
+    const navigate = useNavigate();
 
     const [data, setData] = useState({
         name: "",
@@ -25,39 +36,33 @@ const LoginPopup = ({ setShowLogin }) => {
         password: "",
     });
 
-
     const onChangeHandler = (event) => {
 
-        const name = event.target.name;
-        const value = event.target.value;
+        const name =
+            event.target.name;
 
+        const value =
+            event.target.value;
 
         setData((data) => ({
             ...data,
-            [name]: value
+            [name]: value,
         }));
     };
-
 
     const onLogin = async (event) => {
 
         event.preventDefault();
 
+        let newUrl = url;
+
+        if (currState === "Login") {
+            newUrl += "/api/user/login";
+        } else {
+            newUrl += "/api/user/register";
+        }
 
         try {
-
-            let newUrl = url;
-
-
-            if (currState === "Login") {
-
-                newUrl += "/api/user/login";
-
-            } else {
-
-                newUrl += "/api/user/register";
-            }
-
 
             const response =
                 await axios.post(
@@ -65,102 +70,73 @@ const LoginPopup = ({ setShowLogin }) => {
                     data
                 );
 
+            if (response.data.success) {
 
-            // --------------------------------
-            // LOGIN / REGISTER FAILED
-            // --------------------------------
+                const token =
+                    response.data.token;
 
-            if (!response.data.success) {
+                const role =
+                    response.data.role || "user";
+
+                /*
+                 * Save authentication
+                 */
+                localStorage.setItem(
+                    "token",
+                    token
+                );
+
+                localStorage.setItem(
+                    "role",
+                    role
+                );
+
+                /*
+                 * Update React context
+                 */
+                setToken(token);
+                setRole(role);
+
+                /*
+                 * Close popup
+                 */
+                setShowLogin(false);
+
+                /*
+                 * Role decides first page
+                 */
+                if (role === "admin") {
+
+                    navigate("/add", {
+                        replace: true
+                    });
+
+                } else {
+
+                    navigate("/", {
+                        replace: true
+                    });
+                }
+
+            } else {
 
                 alert(
                     response.data.message
                 );
-
-                return;
             }
-
-
-            // --------------------------------
-            // GET TOKEN
-            // --------------------------------
-
-            const newToken =
-                response.data.token;
-
-
-            const currentUser =
-                response.data.user;
-
-
-            if (!newToken || !currentUser) {
-
-                alert(
-                    "Invalid server response"
-                );
-
-                return;
-            }
-
-
-            // --------------------------------
-            // GET ROLE
-            // --------------------------------
-
-            const userRole =
-                currentUser.role || "user";
-
-
-            // --------------------------------
-            // LOCAL STORAGE
-            // --------------------------------
-
-            localStorage.setItem(
-                "token",
-                newToken
-            );
-
-
-            localStorage.setItem(
-                "role",
-                userRole
-            );
-
-
-            // --------------------------------
-            // UPDATE CONTEXT
-            // --------------------------------
-
-            setToken(newToken);
-
-            setRole(userRole);
-
-            setUser(currentUser);
-
-
-            // --------------------------------
-            // CLOSE LOGIN
-            // --------------------------------
-
-            setShowLogin(false);
 
         } catch (error) {
 
-            console.log(
-                "Login/Register Error:",
-                error
-            );
-
+            console.log(error);
 
             alert(
                 error.response?.data?.message ||
-                "Something went wrong. Please try again."
+                "Something went wrong"
             );
         }
     };
 
-
     return (
-
         <div className="login-popup">
 
             <form
@@ -170,7 +146,9 @@ const LoginPopup = ({ setShowLogin }) => {
 
                 <div className="login-popup-title">
 
-                    <h2>{currState}</h2>
+                    <h2>
+                        {currState}
+                    </h2>
 
                     <img
                         onClick={() =>
@@ -182,39 +160,39 @@ const LoginPopup = ({ setShowLogin }) => {
 
                 </div>
 
-
                 <div className="login-popup-inputs">
 
                     {currState === "Login"
-                        ? (
-                            <></>
-                        )
+                        ? null
                         : (
                             <input
                                 name="name"
-                                onChange={onChangeHandler}
+                                onChange={
+                                    onChangeHandler
+                                }
                                 value={data.name}
                                 type="text"
                                 placeholder="Your name"
                                 required
                             />
-                        )
-                    }
-
+                        )}
 
                     <input
                         name="email"
-                        onChange={onChangeHandler}
+                        onChange={
+                            onChangeHandler
+                        }
                         value={data.email}
                         type="email"
                         placeholder="Your email"
                         required
                     />
 
-
                     <input
                         name="password"
-                        onChange={onChangeHandler}
+                        onChange={
+                            onChangeHandler
+                        }
                         value={data.password}
                         type="password"
                         placeholder="Password"
@@ -223,17 +201,11 @@ const LoginPopup = ({ setShowLogin }) => {
 
                 </div>
 
-
                 <button type="submit">
-
-                    {
-                        currState === "Sign Up"
-                            ? "Create account"
-                            : "Login"
-                    }
-
+                    {currState === "Sign Up"
+                        ? "Create account"
+                        : "Login"}
                 </button>
-
 
                 <div className="login-popup-condition">
 
@@ -243,50 +215,47 @@ const LoginPopup = ({ setShowLogin }) => {
                     />
 
                     <p>
-                        By continuing, I agree to the
-                        terms of use & privacy policy.
+                        By continuing, I agree
+                        to the terms of use &
+                        privacy policy.
                     </p>
 
                 </div>
 
+                {currState === "Login" ? (
 
-                {
-                    currState === "Login"
-                        ?
-                        <p>
-                            Create a new account?
+                    <p>
+                        Create a new account?
 
-                            <span
-                                onClick={() =>
-                                    setCurrState("Sign Up")
-                                }
-                            >
-                                Click here
-                            </span>
+                        <span
+                            onClick={() =>
+                                setCurrState("Sign Up")
+                            }
+                        >
+                            Click here
+                        </span>
+                    </p>
 
-                        </p>
+                ) : (
 
-                        :
+                    <p>
+                        Already have an account?
 
-                        <p>
-                            Already have an account?
+                        <span
+                            onClick={() =>
+                                setCurrState("Login")
+                            }
+                        >
+                            Login here
+                        </span>
+                    </p>
 
-                            <span
-                                onClick={() =>
-                                    setCurrState("Login")
-                                }
-                            >
-                                Login here
-                            </span>
-
-                        </p>
-                }
+                )}
 
             </form>
 
         </div>
     );
 };
-
 
 export default LoginPopup;
