@@ -103,7 +103,11 @@ const StoreContextProvider = (props) => {
         const userRole =
             currentUser?.role || "user";
 
+        if (!userRole) {
+    throw new Error("User role not found");
+}
 
+setRole(userRole);
         localStorage.setItem(
             TOKEN_KEY,
             newToken
