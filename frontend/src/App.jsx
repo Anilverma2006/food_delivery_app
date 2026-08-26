@@ -6,7 +6,7 @@ import { ToastContainer } from "react-toastify";
 
 import { StoreContext } from "./context/StoreContext";
 
-import Navbar from "./components/Navbar/Navbar";
+import Navbar from "./components/Navbar/navbar";
 import Sidebar from "./components/Sidebar/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
