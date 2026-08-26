@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { StoreContext } from "./context/StoreContext";
 import Navbar from "./components/Navbar/Navbar";
 import { Route, Routes, useSearchParams } from "react-router-dom";
 import Home from "./pages/Home/Home";
@@ -18,6 +19,33 @@ import { ToastContainer } from "react-toastify";
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [searchParams] = useSearchParams();
+const {
+    token,
+    authLoading,
+    authChecked
+} = useContext(StoreContext);
+
+useEffect(() => {
+
+    if (!authLoading && authChecked && !token) {
+
+        const loginRequired =
+            sessionStorage.getItem(
+                "loginRequired"
+            );
+
+        if (loginRequired === "true") {
+
+            setShowLogin(true);
+
+            sessionStorage.removeItem(
+                "loginRequired"
+            );
+        }
+    }
+
+}, [authLoading, authChecked, token]);
+
   const url = import.meta.env.VITE_BACKEND_URL;
   console.log(url);
   const role = searchParams.get("role");
