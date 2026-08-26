@@ -1,59 +1,106 @@
+/* Main wrapper */
 .order-add {
-    width: 85%;
-    margin: 50px auto;
-    padding: 0 20px;
-}
-.order-list {
-    width: 100%;
+  width: 100%;
+  padding: 30px;
+  box-sizing: border-box;
 }
 
+.order-add h3 {
+  margin-bottom: 30px;
+  font-size: 24px;
+  color: #333;
+}
+
+/* 
+  Badi screen ke liye Grid Layout (Desktop)
+  Ye code order ko 5 columns me baant dega
+*/
 .order-item {
-    display: grid;
-    grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr;
-    align-items: start;
-    gap: 30px;
-    border: 1px solid #c9bdb8;
-    padding: 20px;
-    margin: 30px 0px;
-    font-size: 14px;
-    color: #505050;
+  display: grid;
+  grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr;
+  align-items: start;
+  gap: 30px;
+  border: 1px solid tomato;
+  padding: 20px;
+  margin-bottom: 30px;
+  font-size: 14px;
+  color: #505050;
+  border-radius: 5px;
 }
 
-.order-item-food, .order-item-name{
-    font-weight: 600;
+/* Box icon image */
+.order-item img {
+  width: 50px;
 }
 
+/* Text styles inside the details div */
+.order-item-food {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
 
 .order-item-name {
-    margin-top: 30px;
-    margin-bottom: 5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
 }
 
 .order-item-address {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
+  line-height: 1.5;
 }
 
+.order-item-address p {
+  margin: 0;
+}
+
+.order-item-phone {
+  margin-top: 5px;
+}
+
+/* Status dropdown button */
 .order-item select {
-    background-color: #ffe8e4;
-    border: 1px solid tomato;
-    width: max(10vw,120px);
-    padding: 10px;
-    outline: none;
+  background-color: #ffe8e4;
+  border: 1px solid tomato;
+  width: max-content;
+  padding: 10px;
+  outline: none;
+  cursor: pointer;
+  border-radius: 3px;
 }
 
-@media (max-width:1000px) {
-    .order-item{
-        font-size: 12px;
-        grid-template-columns: 0.5fr 2fr 1fr;
-        padding: 15px 8px;
-    }
+/* =======================================
+   Responsive Media Queries (Phone & Tablet)
+   ======================================= */
 
-    .order-item select{
-        padding: 5px;
-        font-size: 12px;
-    }
+/* Tablet & Choti screens ke liye */
+@media (max-width: 1000px) {
+  .order-item {
+    /* Isme 3 columns banenge taki content dabe nahi */
+    grid-template-columns: 0.5fr 2fr 1fr;
+    row-gap: 20px;
+  }
+}
 
-    .order-item img{
-        width: 40px;
-    }
+/* Mobile phones ke liye */
+@media (max-width: 768px) {
+  .order-add {
+    padding: 15px; /* Mobile par padding thodi kam */
+  }
+
+  .order-item {
+    /* Mobile par sab kuch ek ke neeche ek aayega */
+    grid-template-columns: 1fr;
+    row-gap: 15px;
+    padding: 15px;
+  }
+  
+  .order-item img {
+    width: 40px; /* Mobile par icon thoda chota */
+  }
+
+  .order-item select {
+    width: 100%; /* Mobile par select button full width me aayega */
+    padding: 12px;
+  }
 }
