@@ -68,26 +68,40 @@
   cursor: pointer;
   border-radius: 3px;
 }
+@media (max-width: 1000px) {
+  .order-item {
+    /* Grid ko 3 columns mein set karenge */
+    grid-template-columns: 2fr 1fr 1fr; 
+    row-gap: 20px;
+  }
+  
+  /* Ye magic line dropdown ko thik niche box ke andar bhej degi */
+  .order-item select {
+    grid-column: 1 / -1; /* Iska matlab hai ye element ab puri width lega ek nayi row me */
+    margin-top: 10px;
+  }
+}
 
-@media (max-width: 900px) {
-  /* Sidebar ki width choti kar dega */
-  .sidebar {
-    width: 80px; 
-    min-width: 80px;
+/* Mobile phones ke liye */
+@media (max-width: 768px) {
+  .order-add {
+    padding: 15px; 
   }
 
-  /* Sidebar ke options ke andar ka text (jaise "Add Items", "Orders") hide kar dega */
-  .sidebar-option p {
-    display: none; 
+  .order-item {
+    /* Mobile par sab kuch ek ke neeche ek aayega */
+    grid-template-columns: 1fr;
+    row-gap: 15px;
+    padding: 15px;
+  }
+  
+  .order-item img {
+    width: 40px; 
   }
 
-  /* Icons ko center me laane ke liye aur extra padding hatane ke liye */
-  .sidebar-options {
-    padding-left: 15px; 
-  }
-
-  .sidebar-option {
-    padding: 10px;
-    justify-content: center; /* Icon ko box ke center me layega */
+  .order-item select {
+    grid-column: 1 / -1;
+    width: 100%; /* Mobile par dropdown full width hoga */
+    padding: 12px;
   }
 }
