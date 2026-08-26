@@ -19,7 +19,24 @@ const upload = multer({
 });
 
 // routes
-foodRouter.post("/add", upload.single("image"), addFood);
+foodRouter.post(
+    "/add",
+    (req, res, next) => {
+        upload.single("image")(req, res, (error) => {
+            if (error) {
+                return res.status(400).json({
+                    success: false,
+                    message: error.code === "LIMIT_FILE_SIZE"
+                        ? "Image must be 5 MB or smaller"
+                        : error.message
+                });
+            }
+
+            next();
+        });
+    },
+    addFood
+);
 
 foodRouter.get("/list", listFood);
 

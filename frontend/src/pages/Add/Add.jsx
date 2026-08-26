@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./Add.css";
 import { assets } from "../../assets/assets";
 import axios from "axios"
@@ -39,28 +39,36 @@ const Add = ({url}) => {
 
         const token = localStorage.getItem("token");
 
-        const response = await axios.post(
-            `${url}/api/food/add`,
-            formData,
-            {
-                headers: {
-                    token: token
+        try {
+            const response = await axios.post(
+                `${url}/api/food/add`,
+                formData,
+                {
+                    headers: {
+                        token: token
+                    }
                 }
-            }
-        );
+            );
 
-        if(response.data.success){
-            setData({
-                name : "",
-                description:"",
-                price:"",
-                category:"Salad"
-            })
-            setImage(false);
-            toast.success(response.data.message);
-        }
-        else{
-            toast.error(response.data.message);
+            if(response.data.success){
+                setData({
+                    name : "",
+                    description:"",
+                    price:"",
+                    category:"Salad"
+                })
+                setImage(false);
+                toast.success(response.data.message);
+            }
+            else{
+                toast.error(response.data.message);
+            }
+        } catch (error) {
+            console.error("Food add error:", error);
+            toast.error(
+                error.response?.data?.message ||
+                "Unable to connect to the server."
+            );
         }
     };
 
@@ -110,7 +118,7 @@ const Add = ({url}) => {
 
           <div className="add-price flex-col">
             <p>Product price</p>
-            <input onChange={onChangeHandler} value={data.price} type="Number" name="price" placeholder="$20" />
+            <input onChange={onChangeHandler} value={data.price} type="number" name="price" min="0" step="0.01" placeholder="$20" required />
           </div>
         </div>
 

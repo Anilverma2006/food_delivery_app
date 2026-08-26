@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { dbConnect } from "./config/db.js";
 
@@ -11,6 +13,10 @@ import orderRouter from "./routes/orderRoute.js";
 
 
 dotenv.config();
+
+const backendDirectory = path.dirname(
+    fileURLToPath(import.meta.url)
+);
 
 
 const app = express();
@@ -59,7 +65,7 @@ app.use(
 
 app.use(
     "/images",
-    express.static("uploads")
+    express.static(path.join(backendDirectory, "uploads"))
 );
 
 

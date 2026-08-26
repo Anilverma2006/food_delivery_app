@@ -1,6 +1,14 @@
 import foodModel from "../models/foodModel.js";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import cloudinary from "../config/cloudinary.js";
+
+const backendDirectory = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    ".."
+);
+const uploadsDirectory = path.join(backendDirectory, "uploads");
 
 // Upload image to Cloudinary
 const uploadToCloudinary = (fileBuffer) => {
@@ -23,50 +31,95 @@ const uploadToCloudinary = (fileBuffer) => {
     });
 };
 
+const hasValidEnvironmentValue = (value) => {
+    const normalizedValue = value?.trim().toLowerCase();
+
+    return Boolean(
+        normalizedValue &&
+        normalizedValue !== "undefined" &&
+        normalizedValue !== "null"
+    );
+};
+
+const isCloudinaryConfigured = () => (
+    hasValidEnvironmentValue(process.env.CLOUDINARY_CLOUD_NAME) &&
+    hasValidEnvironmentValue(process.env.CLOUDINARY_API_KEY) &&
+    hasValidEnvironmentValue(process.env.CLOUDINARY_API_SECRET)
+);
+
+const saveImageLocally = async (file) => {
+    const extension = path.extname(file.originalname) || ".jpg";
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+    await fs.promises.mkdir(uploadsDirectory, { recursive: true });
+    await fs.promises.writeFile(
+        path.join(uploadsDirectory, filename),
+        file.buffer
+    );
+
+    return filename;
+};
+
 
 // Add food item
 const addFood = async (req, res) => {
     try {
 
         if (!req.file) {
-            return res.json({
+            return res.status(400).json({
                 success: false,
                 message: "Image is required"
             });
         }
 
-        // Upload image to Cloudinary
-        const uploadedImage = await uploadToCloudinary(
-            req.file.buffer
-        );
+        const { name, description, price, category } = req.body;
+
+        if (!name || !description || !category || price === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Name, description, category and price are required"
+            });
+        }
+
+        if (!Number.isFinite(Number(price)) || Number(price) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Price must be a valid positive number"
+            });
+        }
+
+        const usingCloudinary = isCloudinaryConfigured();
+        const uploadedImage = usingCloudinary
+            ? await uploadToCloudinary(req.file.buffer)
+            : null;
+        const localImage = usingCloudinary
+            ? null
+            : await saveImageLocally(req.file);
 
         const food = new foodModel({
-            name: req.body.name,
-            description: req.body.description,
-            price: req.body.price,
-            category: req.body.category,
+            name,
+            description,
+            price: Number(price),
+            category,
 
-            // Cloudinary image URL
-            image: uploadedImage.secure_url,
+            image: usingCloudinary ? uploadedImage.secure_url : localImage,
 
-            // Cloudinary public ID
-            imagePublicId: uploadedImage.public_id
+            imagePublicId: usingCloudinary ? uploadedImage.public_id : ""
         });
 
         await food.save();
 
-        res.json({
+        res.status(201).json({
             success: true,
             message: "Food is Added"
         });
 
     } catch (error) {
 
-        console.log(error);
+        console.error("Food add error:", error);
 
-        res.json({
+        res.status(500).json({
             success: false,
-            message: "Something is went wrong"
+            message: error.message || "Unable to add food."
         });
     }
 };
@@ -126,7 +179,7 @@ const removeFood = async (req, res) => {
         else if (food.image && !food.image.startsWith("http")) {
 
             fs.unlink(
-                `uploads/${food.image}`,
+                path.join(uploadsDirectory, food.image),
                 () => {}
             );
 
