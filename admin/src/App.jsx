@@ -6,6 +6,8 @@ import List from './pages/List/List'
 import Add from './pages/Add/Add'
 import Orders from './pages/Orders/Orders'
 import { ToastContainer } from 'react-toastify';
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+// import React, { useEffect } from "react";
 // import 'react-toastify/dist/ReactToastify.css'
 
 const App = () => {
@@ -19,9 +21,9 @@ const App = () => {
       <div className="app-content">
         <Sidebar></Sidebar>
         <Routes>
-          <Route path='/add' element = {<Add url = {url}></Add>}> </Route>
-          <Route path='/list' element = {<List url = {url}></List>}> </Route>
-          <Route path='/orders' element = {<Orders url = {url}></Orders>}> </Route>
+          <Route path="/add" element={<ProtectedRoute> <Add url={url} /> </ProtectedRoute>}/> 
+          <Route path="/list" element={ <ProtectedRoute> <List url={url} /> </ProtectedRoute> } /> 
+          <Route path="/orders" element={ <ProtectedRoute> <Orders url={url} /> </ProtectedRoute> } />
         </Routes>
       </div>
     </div>

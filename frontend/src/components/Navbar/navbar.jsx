@@ -34,14 +34,14 @@ const Navbar = ({ setShowLogin }) => {
           home
         </Link>
 
-        <Link
+        <a
           to={"/#explore-menu"}
           onClick={() => setMenu("menu")}
           className={menu === "menu" ? "active" : ""}
         >
           {" "}
           menu
-        </Link>
+        </a>
 
         <a
           href="#app-download"
