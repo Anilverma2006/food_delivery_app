@@ -1,4 +1,4 @@
-.my-orders {
+/* .my-orders {
     margin: 50px 0px;
 }
 
@@ -51,5 +51,182 @@
 
     .my-orders-order button {
         font-size: 10px;
+    }
+} */
+
+
+
+.my-orders {
+    margin: 50px 0;
+    width: 100%;
+}
+
+.my-orders h2 {
+    margin-bottom: 10px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.my-orders .container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 30px;
+    width: 100%;
+}
+
+.my-orders-order {
+    display: grid;
+    grid-template-columns: 60px minmax(180px, 2fr) 90px 90px minmax(130px, 1fr) 110px;
+    align-items: center;
+    gap: 18px;
+    font-size: 14px;
+    padding: 16px 20px;
+    color: #454545;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.my-orders-order img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.my-orders-order p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.my-orders-order p:nth-child(2) {
+    word-break: break-word;
+}
+
+.my-orders-order p span {
+    color: tomato;
+    margin-right: 5px;
+}
+
+.my-orders-order p b {
+    font-weight: 500;
+    color: #454545;
+}
+
+.my-orders-order button {
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    background-color: #ffe1e1;
+    cursor: pointer;
+    color: #454545;
+    font-size: 13px;
+    width: 100%;
+    min-height: 40px;
+}
+
+
+/* Tablet */
+@media (max-width: 900px) {
+    .my-orders {
+        margin: 40px 0;
+    }
+
+    .my-orders-order {
+        grid-template-columns: 50px minmax(160px, 2fr) 80px;
+        gap: 14px;
+        padding: 15px;
+        font-size: 13px;
+    }
+
+    .my-orders-order button {
+        grid-column: 3;
+        width: 100%;
+        font-size: 12px;
+    }
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+    .my-orders {
+        margin: 30px 0;
+    }
+
+    .my-orders h2 {
+        font-size: 23px;
+        margin-bottom: 5px;
+    }
+
+    .my-orders .container {
+        margin-top: 20px;
+        gap: 12px;
+    }
+
+    .my-orders-order {
+        display: grid;
+        grid-template-columns: 45px 1fr;
+        gap: 10px 12px;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    .my-orders-order img {
+        width: 40px;
+        height: 40px;
+        grid-row: span 4;
+        align-self: start;
+    }
+
+    .my-orders-order p {
+        width: 100%;
+    }
+
+    .my-orders-order p:nth-child(2) {
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .my-orders-order p:nth-child(3),
+    .my-orders-order p:nth-child(4),
+    .my-orders-order p:nth-child(5) {
+        font-size: 12px;
+    }
+
+    .my-orders-order button {
+        grid-column: 2;
+        width: 100%;
+        margin-top: 4px;
+        padding: 10px;
+        font-size: 12px;
+    }
+}
+
+
+/* Small phones */
+@media (max-width: 380px) {
+    .my-orders {
+        margin: 25px 0;
+    }
+
+    .my-orders-order {
+        grid-template-columns: 40px 1fr;
+        padding: 12px;
+        gap: 8px 10px;
+    }
+
+    .my-orders-order img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .my-orders-order p {
+        font-size: 12px;
+    }
+
+    .my-orders-order button {
+        font-size: 11px;
     }
 }
