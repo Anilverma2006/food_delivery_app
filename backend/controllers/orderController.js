@@ -9,71 +9,61 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // placing user order for frontend
 const placeOrder = async (req, res) => {
+  const frontend_url = process.env.FRONTEND_URL;
 
-    const frontend_url = process.env.FRONTEND_URL;
+  try {
+    const newOrder = new orderModel({
+      userId: req.userId,
+      items: req.body.items,
+      amount: req.body.amount,
+      address: req.body.address,
+    });
 
-    try {
+    await newOrder.save();
 
-        const newOrder = new orderModel({
-            userId: req.userId,
-            items: req.body.items,
-            amount: req.body.amount,
-            address: req.body.address
-        });
+    const line_items = req.body.items.map((item) => ({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: Math.round(item.price * 100),
+      },
+      quantity: item.quantity,
+    }));
 
-        await newOrder.save();
+    line_items.push({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: "Delivery Charges",
+        },
+        unit_amount: 200,
+      },
+      quantity: 1,
+    });
 
-        await userModel.findByIdAndUpdate(
-            req.userId,
-            { cartData: {} }
-        );
+    const session = await stripe.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${frontend_url}/verify?success=true&orderId=${newOrder._id}`,
+      cancel_url: `${frontend_url}/verify?success=false&orderId=${newOrder._id}`,
+    });
 
-        const line_items = req.body.items.map((item) => ({
-            price_data: {
-                currency: "usd",
-                product_data: {
-                    name: item.name
-                },
-                unit_amount: item.price * 100
-            },
-            quantity: item.quantity
-        }));
+    await userModel.findByIdAndUpdate(req.userId, { cartData: {} });
 
-        line_items.push({
-            price_data: {
-                currency: "usd",
-                product_data: {
-                    name: "Delivery Charges"
-                },
-                unit_amount: 2 * 100
-            },
-            quantity: 1
-        });
+    res.json({
+      success: true,
+      session_url: session.url,
+    });
+  } catch (e) {
+    console.log("PLACE ORDER ERROR:", e);
 
-        const session =
-            await stripe.checkout.sessions.create({
-                line_items,
-                mode: "payment",
-                success_url:
-                    `${frontend_url}/verify?success=true&orderId=${newOrder._id}`,
-                cancel_url:
-                    `${frontend_url}/verify?success=false&orderId=${newOrder._id}`,
-            });
-
-        res.json({
-            success: true,
-            session_url: session.url
-        });
-
-    } catch (e) {
-
-        console.log(e);
-
-        res.json({
-            success: false,
-            message: "Error"
-        });
-    }
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
 };
 
 const verifyOrder = async (req, res) => {
@@ -95,7 +85,7 @@ const verifyOrder = async (req, res) => {
 
 const userOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({  userId: req.userId });
+    const orders = await orderModel.find({ userId: req.userId });
     res.json({ success: true, data: orders });
   } catch (e) {
     console.log(e);
