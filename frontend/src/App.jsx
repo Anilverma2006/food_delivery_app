@@ -1,10 +1,14 @@
-import React, { useContext, useEffect, useState } from "react";
+import "./app.css";
+
+import React, { useContext, useState } from "react";
+import { Route, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+
 import { StoreContext } from "./context/StoreContext";
+
 import Navbar from "./components/Navbar/Navbar";
 import Sidebar from "./components/Sidebar/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
-
-import { Route, Routes } from "react-router-dom";
 
 import Home from "./pages/Home/Home";
 import Card from "./pages/Card/Card";
@@ -14,136 +18,75 @@ import LoginPopup from "./components/LoginPopup/LoginPopup";
 import Verify from "./pages/verify/verify";
 import MyOrders from "./pages/MyOrders/MyOrders";
 
-import Orders from "./pages/Orders/Orders";
-import List from "./pages/List/List";
 import Add from "./pages/Add/Add";
-
-import { ToastContainer } from "react-toastify";
+import List from "./pages/List/List";
+import Orders from "./pages/Orders/Orders";
 
 const App = () => {
-    const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
-    const {
-        token,
-        role,
-        authLoading,
-        authChecked,
-        url
-    } = useContext(StoreContext);
+  const { role, url } = useContext(StoreContext);
 
-    useEffect(() => {
-        if (!authLoading && authChecked && !token) {
-            const loginRequired =
-                sessionStorage.getItem("loginRequired");
+  const isAdmin = role === "admin";
 
-            if (loginRequired === "true") {
-                setShowLogin(true);
+  return (
+    <>
+      <ToastContainer />
 
-                sessionStorage.removeItem(
-                    "loginRequired"
-                );
-            }
-        }
-    }, [authLoading, authChecked, token]);
+      {showLogin && <LoginPopup setShowLogin={setShowLogin} />}
 
-    const isAdmin = role === "admin";
+      <div className="app">
+        <Navbar setShowLogin={setShowLogin} />
 
-    return (
-        <>
-            <ToastContainer />
+        {isAdmin ? (
+          <div className="admin-layout">
+            <Sidebar />
 
-            {showLogin && (
-                <LoginPopup
-                    setShowLogin={setShowLogin}
+            <main className="admin-content">
+              <Routes>
+                <Route
+                  path="/add"
+                  element={
+                    <ProtectedRoute>
+                      <Add url={url} />
+                    </ProtectedRoute>
+                  }
                 />
-            )}
 
-            <div className="app">
+                <Route
+                  path="/list"
+                  element={
+                    <ProtectedRoute>
+                      <List url={url} />
+                    </ProtectedRoute>
+                  }
+                />
 
-                {/* NORMAL USER NAVBAR */}
-                {!isAdmin && (
-                    <Navbar
-                        setShowLogin={setShowLogin}
-                    />
-                )}
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Orders url={url} />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </main>
+          </div>
+        ) : (
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/card" element={<Card />} />
+            <Route path="/order" element={<PlaceOrder />} />
+            <Route path="/verify" element={<Verify />} />
+            <Route path="/myorders" element={<MyOrders />} />
+          </Routes>
+        )}
+      </div>
 
-                {/* ADMIN SIDEBAR */}
-                {isAdmin && (
-                    <>
-                        <hr />
-                        <Sidebar />
-                    </>
-                )}
-
-                <Routes>
-
-                    {/* ========================= */}
-                    {/* NORMAL USER ROUTES */}
-                    {/* ========================= */}
-
-                    <Route
-                        path="/"
-                        element={<Home />}
-                    />
-
-                    <Route
-                        path="/card"
-                        element={<Card />}
-                    />
-
-                    <Route
-                        path="/order"
-                        element={<PlaceOrder />}
-                    />
-
-                    <Route
-                        path="/verify"
-                        element={<Verify />}
-                    />
-
-                    <Route
-                        path="/myorders"
-                        element={<MyOrders />}
-                    />
-
-                    {/* ========================= */}
-                    {/* ADMIN ROUTES */}
-                    {/* ========================= */}
-
-                    <Route
-                        path="/add"
-                        element={
-                            <ProtectedRoute>
-                                <Add url={url} />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/list"
-                        element={
-                            <ProtectedRoute>
-                                <List url={url} />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/orders"
-                        element={
-                            <ProtectedRoute>
-                                <Orders url={url} />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                </Routes>
-            </div>
-
-            {/* USER FOOTER ONLY */}
-            {!isAdmin && <Footer />}
-        </>
-    );
+      {!isAdmin && <Footer />}
+    </>
+  );
 };
 
 export default App;

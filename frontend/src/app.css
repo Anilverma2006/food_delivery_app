@@ -1,0 +1,14 @@
+.app {
+    min-height: 100vh;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-content {
+    flex: 1;
+    min-width: 0;
+    padding: 30px;
+}

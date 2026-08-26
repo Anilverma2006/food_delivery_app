@@ -6,7 +6,7 @@ const isAdmin = async (req, res, next) => {
     try {
 
         // auth.js must run before isAdmin
-        const userId = req.body.userId;
+        const userId = req.userId;
 
         if (!userId) {
             return res.status(401).json({
