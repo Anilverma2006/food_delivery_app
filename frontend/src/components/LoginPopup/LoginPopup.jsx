@@ -76,7 +76,7 @@ const LoginPopup = ({ setShowLogin }) => {
                     response.data.token;
 
                 const role =
-                    response.data.role || "user";
+                    response.data.user?.role || "user";
 
                 /*
                  * Save authentication
