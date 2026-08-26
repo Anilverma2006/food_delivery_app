@@ -61,7 +61,18 @@ const List = ({ url }) => {
         // console.log(item);
         return (
           <div key={index} className="list-table-format">
-            {item.image ? <img src={item.image} alt="" /> : <Salad />}
+            {item.image ? (
+              <img
+                src={
+                  item.image.startsWith("http")
+                    ? item.image
+                    : `${url}/images/${item.image}`
+                }
+                alt=""
+              />
+            ) : (
+              <Salad />
+            )}
             <p>{item.name}</p>
             <p>{item.category}</p>
             <p>${item.price}</p>
