@@ -2,12 +2,12 @@ import foodModel from "../models/foodModel.js";
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
-// upload image to cloudinary
+// Upload image to Cloudinary
 const uploadToCloudinary = (fileBuffer) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             {
-                folder: "food_delivery",
+                folder: "food_del",
                 resource_type: "image"
             },
             (error, result) => {
@@ -24,7 +24,7 @@ const uploadToCloudinary = (fileBuffer) => {
 };
 
 
-// add food item
+// Add food item
 const addFood = async (req, res) => {
     try {
 
@@ -35,7 +35,7 @@ const addFood = async (req, res) => {
             });
         }
 
-        // upload image to cloudinary
+        // Upload image to Cloudinary
         const uploadedImage = await uploadToCloudinary(
             req.file.buffer
         );
@@ -46,10 +46,10 @@ const addFood = async (req, res) => {
             price: req.body.price,
             category: req.body.category,
 
-            // Cloudinary URL
+            // Cloudinary image URL
             image: uploadedImage.secure_url,
 
-            // Cloudinary public id
+            // Cloudinary public ID
             imagePublicId: uploadedImage.public_id
         });
 
@@ -66,13 +66,13 @@ const addFood = async (req, res) => {
 
         res.json({
             success: false,
-            message: "Something went wrong"
+            message: "Something is went wrong"
         });
     }
 };
 
 
-// all food list
+// All food list
 const listFood = async (req, res) => {
 
     try {
@@ -90,13 +90,13 @@ const listFood = async (req, res) => {
 
         res.json({
             success: false,
-            message: "Error is shown in all food list"
+            message: "Error is Show in all food list"
         });
     }
 };
 
 
-// remove food
+// Remove food
 const removeFood = async (req, res) => {
 
     try {
@@ -110,25 +110,19 @@ const removeFood = async (req, res) => {
             });
         }
 
-        // --------------------------------
-        // NEW FOOD -> DELETE FROM CLOUDINARY
-        // --------------------------------
-
+        // New Cloudinary image
         if (food.imagePublicId) {
 
             await cloudinary.uploader.destroy(
                 food.imagePublicId,
                 {
+                    resource_type: "image",
                     invalidate: true
                 }
             );
 
         }
-
-        // --------------------------------
-        // OLD FOOD -> DELETE LOCAL IMAGE
-        // --------------------------------
-
+        // Old local image
         else if (food.image && !food.image.startsWith("http")) {
 
             fs.unlink(
@@ -151,7 +145,7 @@ const removeFood = async (req, res) => {
 
         res.json({
             success: false,
-            message: "Error is shown in food remove"
+            message: "Error is Show in food remove"
         });
     }
 };
